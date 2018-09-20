@@ -1,0 +1,12 @@
+#!/bin/bash
+
+genisoimage -R                              \
+            -b boot/grub/stage2_eltorito    \
+            -input-charset utf8             \
+            -no-emul-boot                   \
+            -boot-load-size 4               \
+-boot-info-table \
+            -A os                           \
+            -quiet                          \
+            -o os.iso                       \
+            iso

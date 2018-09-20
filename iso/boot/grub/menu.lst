@@ -1,0 +1,5 @@
+default=0
+timeout=0
+
+title Bubblos
+kernel /boot/grub/kernel.elf
