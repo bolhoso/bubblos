@@ -25,7 +25,7 @@ os.iso: kernel.elf
 	            iso
 
 run: os.iso
-	bochs -f bochsrc.txt -q
+	bochs -f .bochsrc.txt -q
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
@@ -34,4 +34,4 @@ run: os.iso
 	$(AS) $(ASFLAGS) $< -o $@
 
 clean:
-	rm -rf *.o kernel.elf os.iso
+	rm -rf *.o kernel.elf os.iso log-bochs.txt
