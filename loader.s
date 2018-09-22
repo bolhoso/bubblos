@@ -5,6 +5,8 @@ FLAGS             equ 0x0
 CHECKSUM          equ -MAGIC_NUMBER
 KERNEL_STACK_SIZE equ 4096
 
+extern k_main
+
 section .bss
 align 4
 kernel_stack:
@@ -21,5 +23,7 @@ loader:
     mov esp, kernel_stack + KERNEL_STACK_SIZE ; point esp to the start of the
                                               ; stack (end of memory area)
 
+    call k_main
+
 .loop:
-    jmp .loop           ; I like the CPU hot babe
+    jmp .loop
