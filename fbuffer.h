@@ -25,9 +25,19 @@ Bit: | 15 14 13 12 11 10 9 8 | 7 6 5 4 | 3 2 1 0 |
 #define FB_NUM_COLS 80
 #define FB_NUM_ROWS 25 
 
+// IO Ports for framebuffer
+#define FB_COMMAND_PORT      0x3D4
+#define FB_DATA_PORT         0x3D5
+
+// IO Ports commands
+#define FB_HIGH_BYTE_COMMAND 14
+#define FB_LOW_BYTE_COMMAND  15
+
 void init_fbuffer();
 void setcolor(char fg, char bg);
+
 void clearscreen();
+void setxy (unsigned short row, unsigned short col);
 
 void putc(char c);
 void kputs(char *str);
