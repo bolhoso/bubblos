@@ -13,14 +13,14 @@ static int _cur_y;
 static int _fg;
 static int _bg;
 
-void init_fbuffer() {
+void fb_init() {
     _reset_cursor();
 
     _fg = LIGHT_GREY;
     _bg = BLACK;
 }
 
-void putc(char c) {
+void fb_putchar(char c) {
     // Carriage return & form feed handling
     if (c == '\r' || c == '\n' || c == '\f') {
         _cur_x = 0;
@@ -44,17 +44,17 @@ void putc(char c) {
         _cur_y++;
     }
 
-    setxy(_cur_y, _cur_x);
+    fb_gotoxy(_cur_y, _cur_x);
 }
 
-void setcolor(char fg, char bg) {
+void fb_setcolor(char fg, char bg) {
     _fg = fg;
     _bg = bg;
 }
 
-void kputs (char *str) {
+void fb_write(char *str) {
     while (*str) {
-        putc(*str++);
+        fb_putchar(*str++);
     }
 }
 
@@ -66,7 +66,7 @@ void kputs (char *str) {
  * instruction argument is 8 bits, the position must be sent in two turns, first 
  * 8 bits then the next 8 bits.
  */
-void setxy (unsigned short row, unsigned short col) {
+void fb_gotoxy(unsigned short row, unsigned short col) {
     unsigned short pos = YX_ADDR(row, col);
 
     outb(FB_COMMAND_PORT, FB_HIGH_BYTE_COMMAND);
@@ -78,7 +78,7 @@ void setxy (unsigned short row, unsigned short col) {
     _cur_x = col;
 }
 
-void clearscreen() {
+void fb_clearscreen() {
     _reset_cursor();
 
     for (int x = 0; x < FB_NUM_COLS; x++) {
@@ -89,10 +89,10 @@ void clearscreen() {
 }
 
 void _reset_cursor() {
-    setxy(0, 0);
+    fb_gotoxy(0, 0);
 }
 
-void _set_vidmem(char c, char row, char col) {
+inline void _set_vidmem(char c, char row, char col) {
     unsigned short *vidmem = (unsigned short *) 0x00B8000;
 
     unsigned short mem_char = MKCHAR(c, _fg, _bg);

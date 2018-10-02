@@ -1,10 +1,10 @@
 #include "fbuffer.h"
 
 void k_main() {
-    init_fbuffer();
-    clearscreen();
+    fb_init();
+    fb_clearscreen();
 
-    setcolor(RED, LIGHT_GREEN);
+    fb_setcolor(RED, LIGHT_GREEN);
 
-    kputs("Hello\nworld!");
+    fb_write("Hello\nworld!");
 }

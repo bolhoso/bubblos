@@ -7,6 +7,7 @@ KERNEL_STACK_SIZE equ 4096
 
 extern k_main
 
+; setup the stack
 section .bss
 align 4
 kernel_stack:
@@ -19,7 +20,6 @@ align 4
     dd CHECKSUM
 
 loader:
-    mov eax, 0xCAFEBABE
     mov esp, kernel_stack + KERNEL_STACK_SIZE ; point esp to the start of the
                                               ; stack (end of memory area)
 
