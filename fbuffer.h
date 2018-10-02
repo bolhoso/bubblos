@@ -34,11 +34,13 @@ Bit: | 15 14 13 12 11 10 9 8 | 7 6 5 4 | 3 2 1 0 |
 #define FB_HIGH_BYTE_COMMAND 14
 #define FB_LOW_BYTE_COMMAND  15
 
+typedef unsigned short ushort;
+
 void fb_init();
-void fb_setcolor(char fg, char bg);
+void fb_setcolor(unsigned char fg, unsigned char bg);
 
 void fb_clearscreen();
-void fb_gotoxy (unsigned short row, unsigned short col);
+void fb_gotoxy (ushort row, ushort col);
 
 void fb_putchar(char c);
 void fb_write(char *str);
