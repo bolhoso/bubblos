@@ -1,7 +1,9 @@
 #include "fbuffer.h"
 #include "mem.h"
+#include "descriptor_tables.h"
 
 void screen_test();
+void delay(int millis);
 
 
 void check_a20() {
@@ -38,17 +40,21 @@ void init_cpuid() {
     enable_long_mode();
 }
 
-void k_main() {
+void kmain() {
+    init_descriptor_tables();
+
     fb_init();
     fb_clearscreen();
-
 	init_cpuid();
 
-//    screen_test();
+    screen_test();
+    while(1);
 }
 
 /* Test filling the whole screen plus scroll */
 void screen_test() {
+    delay(2000);
+    
     fb_setcolor(RED, LIGHT_GREEN);
     for (int i = 0; i < 25; i++) {
         for (int j = 0; j < 80; j++) {
@@ -56,12 +62,15 @@ void screen_test() {
         }
     }
 
-    // delay of 2 seconds
-    for (int i = 0; i < 10000; i++) {
-        for (int j = 0; j < 32767; j++) { }
-    }
+    delay(2000);
 
     // now the scroll!
     fb_write("And here we scroll\n2 lines!\n");
     fb_write("and a very long line 111111111111111111111111111111111111111111111111111111111111");
+}
+
+void delay(int millis) {
+    for (int i = 0; i < 5*millis; i++) {
+        for (int j = 0; j < 32767; j++) { }
+    }
 }

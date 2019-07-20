@@ -1,24 +1,25 @@
 ENTRY(loader)
 
 SECTIONS {
-    . = 0x00100000; /* code loaded at 1mb */
+    . = 1M; /* code loaded at 1MiB, conventional place for kernels to be loaded */
     
-    .text ALIGN (0x1000) : /* align at 4kb */
+    /* First the multiboot header in the beggining of the kernle file */
+    .text ALIGN (4K) :
     {
         *(.text)            /* all text sections from all files */
     }
 
-    .rodata ALIGN (0x1000) :
+    .rodata ALIGN (4K) :
     {
         *(.rodata*)         /* all read only sections from all files */
     }
 
-    .data ALIGN (0x1000) :
+    .data ALIGN (4K) :
     {
         *(.data)
     }
 
-    .bss ALIGN (0x1000) :
+    .bss ALIGN (4K) :
     {
         *(COMMON)
         *(.bss)

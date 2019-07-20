@@ -5,7 +5,7 @@ FLAGS             equ 0x0
 CHECKSUM          equ -MAGIC_NUMBER
 KERNEL_STACK_SIZE equ 16385         ; 16 KiB
 
-extern k_main
+extern kmain
 
 ; setup the stack with 16KiB 
 section .bss
@@ -26,7 +26,7 @@ loader:
     mov esp, stack_bottom + KERNEL_STACK_SIZE ; point esp to the start of the
                                               ; stack (end of memory area)
 
-    call k_main
+    call kmain
 
     ; If kernel has nothing more to do, put into a loop state by
     ; 1) diasbling interrupts with cli (clear interrupt enable in eflags)

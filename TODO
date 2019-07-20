@@ -1,0 +1,15 @@
+[DONE] - Setup GDT
+- Properly setup crosscompiler with stdint
+- Setup serial port
+- Create kprintf
+- Add debugging support
+- Re-organize source code (arch/i386, etc.)
+- Setup interrupts IDT
+- Add keyboard support
+- Create simple standard library (printf, etc.)
+- Disk interface
+- Use my own bootloader reading from disk (real mode, switch to protected mode)
+
+
+Refs:
+- https://wiki.osdev.org/Required_Knowledge
