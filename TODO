@@ -9,6 +9,8 @@
 - Create simple standard library (printf, etc.)
 - Disk interface
 - Use my own bootloader reading from disk (real mode, switch to protected mode)
+- Add TSS - Task State Segment in the GDT to allow multi-tasking
+- Separate Kernel and User land into rings 0 and 3 in GDT
 
 
 Refs:
