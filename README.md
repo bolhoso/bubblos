@@ -10,6 +10,7 @@ for the guidance and inspiration :)
 - Little OS Book: http://littleosbook.github.io/ 
 - Writing Simple C Kernel: http://www.osdever.net/tutorials/view/writing-a-simple-c-kernel
 - The boot process: https://manybutfinite.com/post/how-computers-boot-up/ 
+- Multiboot Specification: https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
 
 ## License
 
