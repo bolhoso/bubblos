@@ -12,6 +12,11 @@ for the guidance and inspiration :)
 - The boot process: https://manybutfinite.com/post/how-computers-boot-up/ 
 - Multiboot Specification: https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
 - Random tutorials: http://www.osdever.net/tutorials/
+- GDT: 
+ - http://www.jamesmolloy.co.uk/tutorial_html/4.-The%20GDT%20and%20IDT.html
+ - https://wiki.osdev.org/GDT_Tutorial
+ - https://wiki.osdev.org/Global_Descriptor_Table
+ - http://www.osdever.net/bkerndev/Docs/gdt.htm
 
 ## License
 
