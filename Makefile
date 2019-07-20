@@ -1,4 +1,4 @@
-OBJECTS = loader.o kmain.o fbuffer.o io.o
+OBJECTS = loader.o kmain.o fbuffer.o io.o mem.o
 CC = gcc
 CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
          -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c
@@ -25,8 +25,10 @@ os.iso: kernel.elf
 	            iso
 
 run: os.iso
-	# To run with bochs: bochs -f .bochsrc.txt -q
-	qemu-system-x86_64 --cdrom os.iso
+	qemu-system-x86_64  --cdrom os.iso
+
+runb: os.iso
+	bochs -f .bochsrc.txt -q
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
