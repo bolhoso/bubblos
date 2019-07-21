@@ -27,6 +27,14 @@ os.iso: kernel.elf
 run: os.iso
 	qemu-system-i386 --cdrom os.iso
 
+# Remote debug. In GDB, use to connect: 
+# target remote localhost:1234
+debug: os.iso
+	qemu-system-i386 -s -S --cdrom os.iso &
+	gdb kernel.elf
+
+
+
 runb: os.iso
 	bochs -f .bochsrc.txt -q
 
