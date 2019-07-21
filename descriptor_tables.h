@@ -23,6 +23,9 @@ struct gdt_ptr_struct {
 } __attribute__((packed));
 typedef struct gdt_ptr_struct gdt_ptr_t;
 
+// defined in loader.s
+extern void __asm_gdt_flush(unsigned int);
+
 // GDT public initialization function
 void init_descriptor_tables();
 

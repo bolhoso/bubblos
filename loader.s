@@ -1,4 +1,6 @@
 global loader
+global __asm_gdt_flush
+global __asm_idt_load
 
 MAGIC_NUMBER      equ 0x1BADB002    ; the multiboot magic number spec:w
 FLAGS             equ 0x0
@@ -20,6 +22,35 @@ section .text
     dd FLAGS
     dd CHECKSUM
 
+; __asm_gdt_flush
+; Responsible for loading the GDT
+; @param unsigned int gdt pointer
+__asm_gdt_flush:
+    ;cli
+    mov eax, [esp+4]    ; Pointer to the GDT as param
+    lgdt [eax]          ; Load GDT pointer content
+;
+    mov ax, 0x10        ; Offset in the GDT to data segment
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    ; Do a far jump
+    jmp 0x08:.flush
+.flush:
+    ret
+
+; __asm_idt_load
+; Responsible for loading the IDT structures
+; @param unsigned int IDT pointer
+__asm_idt_load
+    mov eax, [esp + 4]
+    lidt [eax]
+    ret
+
+; loader
 ; The linker script (link.ld) specified "loader" as the entry point
 ; This is where bootloader will jump right after loading the kernel
 loader:

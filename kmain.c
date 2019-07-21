@@ -1,16 +1,27 @@
 #include "fbuffer.h"
 #include "mem.h"
 #include "descriptor_tables.h"
+#include "idt.h"
+#include "isr_handlers.h"
 
 void screen_test();
 void delay(int millis);
-
 
 void check_a20() {
     fb_write("Checking A20 register is on...");
     asm_is_A20_on() ? fb_write("OK!\n") : fb_write("off\n");
 
     // TODO: how to turn A20 on on my own bootloader
+}
+
+void init_interrupts() {
+    fb_write("Enabling IRQs...");
+    idt_install();
+    fb_write("OK!\n" );
+
+    fb_write("Installing IRQ handlers...");
+    isr_install();
+    fb_write("OK!\n" );
 }
 
 void check_cpuid() {
@@ -26,7 +37,7 @@ void enable_long_mode() {
     fb_write("Checking long-mode supported...");
 	if (!asm_check_long_mode()) {
 		fb_write("Not supported! Halting");
-//		asm_halt_processor();
+		asm_halt_processor();
 	}
 	fb_write("OK!\n");
 }
@@ -37,7 +48,7 @@ void init_cpuid() {
 
     check_a20();
     check_cpuid();
-    enable_long_mode();
+    // 32 bits for now:    enable_long_mode();
 }
 
 void kmain() {
@@ -45,7 +56,13 @@ void kmain() {
 
     fb_init();
     fb_clearscreen();
+
+    init_interrupts();
 	init_cpuid();
+
+    int a = 0;
+    int b = 10 / a;
+    fb_write("oi" + b);
 
     screen_test();
     while(1);
@@ -53,7 +70,7 @@ void kmain() {
 
 /* Test filling the whole screen plus scroll */
 void screen_test() {
-    delay(2000);
+    delay(5000);
     
     fb_setcolor(RED, LIGHT_GREEN);
     for (int i = 0; i < 25; i++) {

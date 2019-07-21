@@ -1,10 +1,10 @@
 #include "descriptor_tables.h"
 
-extern void __asm_gdt_flush(unsigned int);
 static void init_gdt();
 static void gdt_set_gate(int, unsigned int, unsigned int, unsigned char, unsigned char);
 
-gdt_entry_t gdt_entries[3];
+#define NUM_GDT_ENTRIES 3
+gdt_entry_t gdt_entries[NUM_GDT_ENTRIES];
 gdt_ptr_t   gdt_ptr;
 //idt_entry_t idt_entries[24];
 //idt_ptr_t idt_ptr;
@@ -39,7 +39,7 @@ void init_descriptor_tables() {
 }
 
 static void init_gdt() {
-    gdt_ptr.limit = (sizeof(gdt_entry_t) * 5) - 1;
+    gdt_ptr.limit = (sizeof(gdt_entry_t) * NUM_GDT_ENTRIES) - 1;
     gdt_ptr.base  = (unsigned int)&gdt_entries;
 
     gdt_set_gate(0, 0, 0, 0, 0);                // Null segment, mandatory to avoid processor fault
