@@ -2,8 +2,9 @@
 #include "isr_handlers.h"
 #include "fbuffer.h"
 
-char *exception_messages[] = {
-    "Division By Zero",
+// TODO: why char *exception_messages[] = { "...", ""} doesn't work?
+char exception_messages[256][50] = {
+    "Division By 0",   
 };
 
 void isr_install() {
