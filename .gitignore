@@ -3,3 +3,4 @@ iso/boot/kernel.elf
 *.o
 kernel.elf
 os.iso
+tags

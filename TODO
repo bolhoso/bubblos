@@ -1,17 +1,17 @@
 [DONE] - Setup GDT
+[DONE] - Setup interrupts IDT
 - Properly setup crosscompiler with stdint
 - Setup serial port
 - Create kprintf
 - Add debugging support
 - Re-organize source code (arch/i386, etc.)
-- Setup interrupts IDT
+- Create all interrupt handlers
 - Add keyboard support
 - Create simple standard library (printf, etc.)
 - Disk interface
 - Use my own bootloader reading from disk (real mode, switch to protected mode)
 - Add TSS - Task State Segment in the GDT to allow multi-tasking
 - Separate Kernel and User land into rings 0 and 3 in GDT
-
 
 Refs:
 - https://wiki.osdev.org/Required_Knowledge

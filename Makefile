@@ -31,9 +31,10 @@ run: os.iso
 # target remote localhost:1234
 debug: os.iso
 	qemu-system-i386 -s -S --cdrom os.iso &
-	gdb kernel.elf
+	gdb kernel.elf -ex "target remote localhost:1234"
 
-
+eclipse-debug: os.iso
+	qemu-system-i386 -gdb pipe:lala -S --cdrom os.iso &
 
 runb: os.iso
 	bochs -f .bochsrc.txt -q
