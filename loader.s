@@ -1,68 +1,92 @@
-global loader
-global __asm_gdt_flush
-global __asm_idt_load
+bits 16
+org 0x7c00
 
-MAGIC_NUMBER      equ 0x1BADB002    ; the multiboot magic number spec:w
-FLAGS             equ 0x0
-CHECKSUM          equ -MAGIC_NUMBER
-KERNEL_STACK_SIZE equ 16385         ; 16 KiB
+global main
+global WriteString
+global Reboot
 
-extern kmain
+main:
+  jmp short start
+  nop
 
-; setup the stack with 16KiB 
-section .bss
-align 16
-stack_bottom:
-resb KERNEL_STACK_SIZE
-stack_top:
 
-section .text
-    align 4
-    dd MAGIC_NUMBER
-    dd FLAGS
-    dd CHECKSUM
+ClearScreen:
+	push	bp
+	mov		bp, sp
+	pusha
 
-; __asm_gdt_flush
-; Responsible for loading the GDT
-; @param unsigned int gdt pointer
-__asm_gdt_flush:
-    ;cli
-    mov eax, [esp+4]    ; Pointer to the GDT as param
-    lgdt [eax]          ; Load GDT pointer content
-;
-    mov ax, 0x10        ; Offset in the GDT to data segment
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
+	mov		ah, 0x07 ; Scroll down
+	mov		al, 0x00 ; clear window
+	mov		bh, 0x07 ; white on black
+	mov		cx, 0x00 ; top left is 0, 0
+	mov		dh, 0x18 ; 24 rows
+	mov		dl, 0x4f ; 79 cols
+	int		0x10
 
-    ; Do a far jump
-    jmp 0x08:.flush
-.flush:
-    ret
+	popa
+	mov		sp, bp
+	pop		bp
+	ret
 
-; __asm_idt_load
-; Responsible for loading the IDT structures
-; @param unsigned int IDT pointer
-__asm_idt_load
-    mov eax, [esp + 4]
-    lidt [eax]
-    ret
+; si -> pointer to string
+WriteString:
+  mov		ah, 0x0e  ; 0xe, int 10h => print char
+  mov		bx, 0x09  ; fg and page 0
 
-; loader
-; The linker script (link.ld) specified "loader" as the entry point
-; This is where bootloader will jump right after loading the kernel
-loader:
-    mov esp, stack_bottom + KERNEL_STACK_SIZE ; point esp to the start of the
-                                              ; stack (end of memory area)
+char:
+	mov		al, [si]
 
-    call kmain
+	cmp		al, 0
+	je		WriteString_done
 
-    ; If kernel has nothing more to do, put into a loop state by
-    ; 1) diasbling interrupts with cli (clear interrupt enable in eflags)
-    ; 2) Wait for next interrupt to arrive with hlt. Interrupts are disabled, so this will lock the computer
-    ; 3) Jump back to hlt if the computer get awaken by an unmaasked interrupt
-halt: 
-    hlt
-    jmp halt
+	int   0x10
+	add		si, 1
+	jmp		char
+
+WriteString_done:
+  ret
+
+start:
+  cli
+  mov [iBootDrive], dl  
+  mov ax, cs          ; Cs=0x0, where boot is 0x07c00
+  mov ds, ax
+  mov es, ax
+  mov ss, ax
+  mov sp, 0x7C00
+  sti                  ; enable interrupts
+
+  ; Prepare floppy drive for use
+  mov dl, iBootDrive
+  xor ax, ax
+  int 0x13
+  jc bootFailure      ; show message is carry is set from int 13h
+
+bootFailure:
+	call ClearScreen
+
+;	xchg bx, bx
+  mov   si, diskerror
+	call	WriteString
+  call	Reboot
+
+Reboot:
+  mov			si, rebootmsg
+  call    WriteString
+  xor     ax, ax
+  int     0x16            ; read any key (int 16h, ax=0)
+
+  db 0xEA                      ; machine lang to jump to FFFF:0000 (reboot)
+  dw 0x0000
+  dw 0xFFFF
+	ret
+
+
+# Data
+loadmsg:    db "Loading OS...", 13, 10, 0
+diskerror:  db "Disk error. ", 0
+rebootmsg:  db "Press any key to reboot", 13, 10, 0
+iBootDrive: db 0
+
+times 510-($-$$) db 0
+dw 0xAA55
