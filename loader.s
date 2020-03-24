@@ -76,12 +76,10 @@ Reboot:
   xor     ax, ax
   int     0x16            ; read any key (int 16h, ax=0)
 
-	jmp far 0000:ffff
   db 0xEA                      ; machine lang to jump to FFFF:0000 (reboot)
   dw 0x0000
   dw 0xFFFF
 	ret
-
 
 # Data
 loadmsg:    db "Loading OS...", 13, 10, 0
