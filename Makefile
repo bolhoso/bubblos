@@ -36,8 +36,17 @@ debug: os.iso
 eclipse-debug: os.iso
 	qemu-system-i386 -gdb pipe:lala -S --cdrom os.iso &
 
-runb: os.iso
+runb: os.iso # doesn't stop at beggining
+	bochs -f .bochsrc.txt -q -rc .bochsrc-debugger.rc
+
+rundbg: os.iso # with debugger stop at beggining
 	bochs -f .bochsrc.txt -q
+
+# TODO temporary while I try writing my bootloader
+bootblock:
+	as -o loader.o loader.s
+	ld -o loader.out loader.o -Ttext 0x7c00
+	objcopy -O binary -j .text loader.out loader.bin
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
