@@ -86,7 +86,7 @@ start:
   mov ds, ax
   mov es, ax
   mov ss, ax
-  mov sp, 0x7C00
+  mov sp, 0x9C00  # stck starts at 0x9c00 and shrinks until 0x7c00, that's 0x2000 (8kb) of size
   sti							# enable interrupts
 
   # Display loading message
@@ -105,7 +105,6 @@ loop: jmp loop
 bootFailure:
 # call ClearScreen
 
-#	xchg bx, bx
   lea		si, diskerror
   call	WriteString
   call	Reboot
