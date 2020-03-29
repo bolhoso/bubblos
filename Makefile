@@ -1,51 +1,45 @@
 OBJECTS = loader.o kmain.o fbuffer.o io.o mem.o descriptor_tables.o idt.o isr.o isr_handlers.o
+LD = ld
+LDFLAGS = -T link.ld -melf_i386
 CC = gcc
 CFLAGS = -g -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
          -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c
-LDFLAGS = -T link.ld -melf_i386
 AS = nasm
-ASFLAGS = -f elf
+ASFLAGS = -f bin
 
 all: kernel.elf
 
 kernel.elf: $(OBJECTS)
-	ld $(LDFLAGS) $(OBJECTS) -o kernel.elf
+	$(LD) $(LDFLAGS) $(OBJECTS) -o kernel.elf
+	objcopy -O binary -j .text kernel.elf kernel.bin
 
-os.iso: kernel.elf
-	cp kernel.elf iso/boot/kernel.elf
-	genisoimage -R                              \
-	            -b boot/grub/stage2_eltorito    \
-	            -input-charset utf8             \
-	            -no-emul-boot                   \
-	            -boot-load-size 4               \
-	            -boot-info-table \
-	            -A os                           \
-	            -quiet                          \
-	            -o os.iso                       \
-	            iso
+disk.img: loader.bin # TODO: kernel.elf
+	cp loader.bin disk.img
 
-run: os.iso
-	qemu-system-i386 --cdrom os.iso
+run: disk.img
+	qemu-system-i386 disk.img
 
 # Remote debug. In GDB, use to connect: 
 # target remote localhost:1234
-debug: os.iso
-	qemu-system-i386 -s -S --cdrom os.iso &
+debug: disk.img
+	qemu-system-i386 -s -S disk.img &
 	gdb kernel.elf -ex "target remote localhost:1234"
 
-eclipse-debug: os.iso
-	qemu-system-i386 -gdb pipe:lala -S --cdrom os.iso &
+eclipse-debug: disk.img
+	qemu-system-i386 -gdb pipe:lala -S disk.img &
 
-runb: os.iso # doesn't stop at beggining
+runb: disk.img # doesn't stop at beggining
 	bochs -f .bochsrc.txt -q -rc .bochsrc-debugger.rc
 
-rundbg: os.iso # with debugger stop at beggining
+rundbg: disk.img # with debugger stop at beggining
 	bochs -f .bochsrc.txt -q
 
 # TODO temporary while I try writing my bootloader
-bootblock:
-	as -o loader.o loader.s
-	ld -o loader.out loader.o -Ttext 0x7c00
+loader.o:
+	as --32 -o loader.o loader.s
+	$(LD) $(LDFLAGS) -o loader.out loader.o -Ttext 0x7c00
+
+loader.bin: loader.o
 	objcopy -O binary -j .text loader.out loader.bin
 
 %.o: %.c
@@ -55,4 +49,4 @@ bootblock:
 	$(AS) $(ASFLAGS) $< -o $@
 
 clean:
-	rm -rf *.o kernel.elf os.iso log-bochs.txt
+	rm -rf *.o kernel.elf disk.img log-bochs.txt
