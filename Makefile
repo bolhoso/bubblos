@@ -35,7 +35,7 @@ rundbg: disk.img # with debugger stop at beggining
 	bochs -f .bochsrc.txt -q
 
 # TODO temporary while I try writing my bootloader
-loader.o:
+loader.o: loader.s
 	as --32 -o loader.o loader.s
 	$(LD) $(LDFLAGS) -o loader.out loader.o -Ttext 0x7c00
 
