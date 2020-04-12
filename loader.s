@@ -193,8 +193,6 @@ bootFailure:
 loadmsg:		.asciz "Loading OS...\r\n"
 diskerror:	.asciz "Disk error. "
 rebootmsg:	.asciz "Press any key to reboot\r\n"
-newline:	.asciz "\r\n"
-
 
 # Fill to 512 bytes and 
 .fill (510-(.-main)), 1, 0
