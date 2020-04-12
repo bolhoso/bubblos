@@ -5,10 +5,50 @@
 
 .globl main
 
+/*******************************************************************************
+
+ This is the bootloader for my toy operating systems. Below is the main BIOS, 
+ Loader and Kernel memory organization as it stands now.
+
+	 |================| 0x100000 (1mb boundary)
+	 |   BIOS 256k    |
+	 |================| 0xC0000
+	 | Vid Mem (128k) |
+	 |================| 0xA0000
+	 | Ext. BIOS Data |
+	 |  Area (639kb)  |
+	 |================| 0x9fc00
+	 |                |
+	 |  Free (638kb)  |
+	 |                |
+	 |                |
+	 +----------------+ <To Be Defined>
+	 |  Kernel Load   |
+	 |     Area       |
+	 +----------------+ 0x9000
+	 |   <Not Used>   |
+	 +----------------+ 0x7f00
+	 | Stack(256byte) |       >> Remember stack grows downward
+	 +----------------+ 0x7e00
+	 |  Boot  Sector  |
+	 |   (512 bytes)  |
+	 |================| 0x7c00
+	 |                |
+	 |================| 0x500
+	 | Bios Data Area |
+	 |================| 0x400
+	 | Int Vect Table |
+	 |     (1kb)      |
+	 |================| 0x0
+
+ Lines with === are defined by IBM PC Architecture and --- by this bootloader
+ and/or kernel organization
+
+*******************************************************************************/
+
 main:
   jmp short start
   nop
-
 
 # variables
 iBootDrive: .byte 0
@@ -40,6 +80,10 @@ ClearScreen:
 #
 .func WriteString
 WriteString:
+	push bp
+	mov bp, sp
+	pusha
+
   mov		ah, 0x0e	# 0xe, int 10h => print char
   mov		bx, 0x09  # fg and page 0
 
@@ -54,6 +98,8 @@ char:
   jmp		char
 
 writestring_done:
+	popa
+	pop bp
   retw
 .endfunc
 
@@ -108,40 +154,41 @@ print_digit:
 	shl dx, 4
 	cmp dx, 0
 	jne printw_loop
+
+	mov al, ' '
+	int 0x10
 	
 	pop bp
 	ret
 .endfunc
 
 
+#
 # read_sector
-# Sector   = (LBA mod SectorsPerTrack) + 1
-# Cylinder = (LBA / SectorsPerTrack) / NumHeads
-# Head     = (LBA / SectorsPerTrack) mod NumHeads
+#		dh - number of sectors to read
+#		dl - drive to read
+#	  es:bx - memory region to store
 .func read_sector
 read_sector:
 	push bp
 	mov bp, sp
 
-	mov ah, 0x02
-	mov dl, [iBootDrive]			# Boot drive
-	mov ch, 3			# Cylinder 3
-	mov dh, 1			# Track on the 2nd side of floppy, 0 is the first
-	mov cl, 4			# 4th sector on the track, starts at 1
-	mov al, 5			# read 5 sectors from the starting point
+	push dx				# Store dx to recall how many sectors we wanted to read
 
-	# Set the address bios should the sector to
-	# BIOS expect to find it in ES:BX
-  # 0xa000:0x1234 --> 0xA1234 physical
-	mov bx, 0xa000
-	mov es, bx
-	mov bx, 0x1234
+	mov ah, 0x02	# Bios read function
+	mov al, dh		# NoF Sectors: Read DH sectors from the starting point
+	mov ch, 0x00	# Cylinder:    0
+	mov dh, 0x00	# Head/Track:  head 0
+	mov cl, 0x02	# Sector:      2nd sector on the track, starts at 1
 
 	int 0x13
 	jc disk_error
 
-disk_success:
-	.asciz "Read good!"
+  # Restore Dx and compare number of sectors intenteded vs read
+	pop dx
+	cmp dh, al		# Did we read as many sectors as we wanted?
+	jne disk_error
+
 	lea si, disk_success
 	call WriteString
 
@@ -154,17 +201,18 @@ disk_error:
   call	Reboot
 .endfunc
 
-
+#
 # start
 #
 start:
   cli
   mov iBootDrive, dl	
-  mov ax, cs	 	 	# Cs=0x0, where boot is 0x07c00
-  mov ds, ax
+  mov ax, cs	 	 	# Cs=0x0, where boot is 0x7c00
+  mov ds, ax      # DS=0 ES=0 SS=0
   mov es, ax
   mov ss, ax
-  mov sp, 0x9C00  # stck starts at 0x9c00 and shrinks until 0x7c00, that's 0x2000 (8kb) of size
+  mov sp, 0x7F00  # 256 bytes of stack, after 0x7E00
+	mov bp, sp
   sti							# enable interrupts
 
   # Display loading message
@@ -172,16 +220,27 @@ start:
 	call	WriteString
 
   # Prepare floppy drive for use
-  mov dl, iBootDrive
+  mov dl, [iBootDrive]
   xor ax, ax
   int 0x13
   jc	bootFailure	 	 # show message is carry is set from int 13h
 
-  # Read kernel from disk
+######### TEST DISK: read 1 sector after boot sector and print boundaries
+	mov bx, 0x9000
+	mov dh, 1							# 1 sector of 512 bytes
+	mov dl, [iBootDrive]	# The boot drive, stored from BIOS
 	call read_sector
 
+  # Print first byte of disk
+	mov dx, [0x9000]
+	call printw_hex
+
+	mov dx, [0x9000 + 510]
+	call printw_hex
+######### TEST DISK
+
   # Halt for now
-loop: jmp loop
+	jmp .
 
 bootFailure:
   call ClearScreen
@@ -190,11 +249,15 @@ bootFailure:
   call	WriteString
   call	Reboot
 
-loadmsg:		.asciz "Loading OS...\r\n"
-diskerror:	.asciz "Disk error. "
-rebootmsg:	.asciz "Press any key to reboot\r\n"
+loadmsg:			.asciz "Loading OS...\r\n"
+diskerror:		.asciz "Disk error. "
+rebootmsg:		.asciz "Press any key to reboot\r\n"
+disk_success: .asciz "Read from disk!"
 
 # Fill to 512 bytes and 
 .fill (510-(.-main)), 1, 0
 .byte 0x55
 .byte 0xaa
+
+.fill 256, 1, 0xDA
+.fill 256, 1, 0xFA

@@ -49,4 +49,4 @@ loader.bin: loader.o
 	$(AS) $(ASFLAGS) $< -o $@
 
 clean:
-	rm -f *.bin *.o kernel.elf disk.img log-bochs.txt
+	rm -rf *.bin *.o kernel.elf disk.img log-bochs.txt
