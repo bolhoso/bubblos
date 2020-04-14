@@ -1,21 +1,23 @@
-OBJECTS = kmain.o fbuffer.o io.o mem.o descriptor_tables.o idt.o isr.o isr_handlers.o
+OBJECTS = kmain.o fbuffer.o io.o mem.o descriptor_tables.o idt.o isr.o isr_handlers.o loader_util.o
 LD = ld
 LDFLAGS = -T link.ld -melf_i386
 CC = gcc
 CFLAGS = -g -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
          -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c
 AS = nasm
-ASFLAGS = -f bin
+ASFLAGS = -f elf
 
 all: kernel.elf
 
 kernel.elf: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o kernel.elf
-	objcopy -O binary -j .text kernel.elf kernel.bin
 
-disk.img: loader.bin # TODO kernel.bin # TODO: kernel.elf
-	# TODO when booting from Bochs disk, disk image size must be a multiple of 512 byte
-	# dd if=/dev/zero of=zero.img bs=1 count=10 count=`perl -e 'print(512 - ((-s "kernel.bin")%512))'`
+kernel.bin: kernel.elf
+	ld -m elf_i386 -s -Ttext 0x0000 --oformat binary -o kernel.bin kernel.elf
+
+disk.img: loader.bin kernel.bin
+	# When booting from Bochs disk, disk image size must be a multiple of 512 byte
+	dd if=/dev/zero of=zero.img bs=1 count=`perl -e 'print(512 - ((-s "kernel.bin")%512))'`
 	cat loader.bin kernel.bin > disk.img
 
 run: disk.img
@@ -37,11 +39,11 @@ rundbg: disk.img # with debugger stop at beggining
 	bochs -f .bochsrc.txt -q
 
 # TODO temporary while I try writing my bootloader
-loader.o: loader.s
-	as --32 -o loader.o loader.s
-	$(LD) $(LDFLAGS) -o loader.out loader.o -Ttext 0x7c00
+loader.o2: loader.s
+	as --32 -o loader.o2 loader.s
+	$(LD) $(LDFLAGS) -o loader.out loader.o2 -Ttext 0x7c00
 
-loader.bin: loader.o
+loader.bin: loader.o2
 	objcopy -O binary -j .text loader.out loader.bin
 
 %.o: %.c
