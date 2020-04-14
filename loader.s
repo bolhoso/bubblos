@@ -162,7 +162,6 @@ print_digit:
 	ret
 .endfunc
 
-
 #
 # read_sector
 #		dh - number of sectors to read
@@ -179,7 +178,7 @@ read_sector:
 	mov al, dh		# NoF Sectors: Read DH sectors from the starting point
 	mov ch, 0x00	# Cylinder:    0
 	mov dh, 0x00	# Head/Track:  head 0
-	mov cl, 0x02	# Sector:      2nd sector on the track, starts at 1
+	mov cl, 0x01	# Sector:      1st sector on the track, starts at 1
 
 	int 0x13
 	jc disk_error
@@ -225,18 +224,54 @@ start:
   int 0x13
   jc	bootFailure	 	 # show message is carry is set from int 13h
 
-######### TEST DISK: read 1 sector after boot sector and print boundaries
+######### TEST DISK: read 42 sectors, including boot sector and put at 0x9000
+# TODO to boot the kernel, I should not read the first sector
 	mov bx, 0x9000
-	mov dh, 1							# 1 sector of 512 bytes
 	mov dl, [iBootDrive]	# The boot drive, stored from BIOS
+	mov dh, 42						# 64 sectors of 512 bytes, beware this is highly coupled with 
+												# Makefile creating disk image of enough size
 	call read_sector
 
-  # Print first byte of disk
-	mov dx, [0x9000]
+  # bios boot singature 0xAA55
+	mov dx, [0x9000 + 0x1fe]
 	call printw_hex
 
-	mov dx, [0x9000 + 510]
+  # multiboot signature print #1BadBOOT
+	mov dx, [0x9000 + 512] # offset 0x200 on disk.img
 	call printw_hex
+	mov dx, [0x9000 + 514] # offset 0x202
+	call printw_hex
+
+#	00003220  44 69 76 69 73 69 6f 6e  20 42 79 20 30 00 00 00  |Division By 0...|
+	mov dx, [0x9000 + 0x500] # ffbe
+	call printw_hex
+
+	mov dx, [0x9000 + 0xa00] # 660c
+	call printw_hex
+
+	mov dx, [0x9000 + 0xde0] # 241c
+	call printw_hex
+
+	mov dx, [0x9000 + 0x1200] # 6843
+	call printw_hex
+
+	mov dx, [0x9000 + 0x1500] # 0xf1ac
+	call printw_hex
+
+	mov dx, [0x9000 + 0x1720] # 0x6202
+	call printw_hex
+
+	mov dx, [0x9000 + 0x3220] # 6944
+	call printw_hex
+
+	mov dx, [0x9000 + 0x3222] # 0x6976
+	call printw_hex
+
+	mov dx, [0x9000 + 0x322B] # 0x3020
+	call printw_hex
+
+	mov si, 0x9000 + 0x3220
+	call WriteString
 ######### TEST DISK
 
   # Halt for now
@@ -258,6 +293,3 @@ disk_success: .asciz "Read from disk!"
 .fill (510-(.-main)), 1, 0
 .byte 0x55
 .byte 0xaa
-
-.fill 256, 1, 0xDA
-.fill 256, 1, 0xFA

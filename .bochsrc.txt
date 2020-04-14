@@ -1,7 +1,7 @@
 megs:            32
 romimage:        file=/usr/share/bochs/BIOS-bochs-latest
 vgaromimage:     file=/usr/share/bochs/VGABIOS-lgpl-latest
-floppya:         1_44=loader.bin, status=inserted
+floppya:         1_44=disk.img, status=inserted
 boot:            a
 log:             log-bochs.txt
 clock:           sync=realtime, time0=local
