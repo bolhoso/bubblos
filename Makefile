@@ -18,7 +18,12 @@ kernel.bin: kernel.elf
 disk.img: loader.bin kernel.bin
 	# When booting from Bochs disk, disk image size must be a multiple of 512 byte
 	dd if=/dev/zero of=zero.img bs=1 count=`perl -e 'print(512 - ((-s "kernel.bin")%512))'`
-	cat loader.bin kernel.bin > disk.img
+	# For now, compile the simple kernel that writes X to video memory
+	# it's relocated to 0x9000, where (or more or less where) the booloader will call
+	# it by hand
+	gcc -ffreestanding -c mykernel.c -o mykernel.o
+	ld -o mykernel.bin -Ttext 0x9000 mykernel.o --oformat binary
+	cat loader.bin mykernel.bin > disk.img
 
 run: disk.img
 	qemu-system-i386 disk.img
@@ -41,7 +46,7 @@ rundbg: disk.img # with debugger stop at beggining
 # TODO temporary while I try writing my bootloader
 loader.out: loader.s
 	as --32 -o loader.o2 loader.s
-	$(LD) $(LDFLAGS) -o loader.out loader.o2 *.o -Ttext 0x7c00
+	$(LD) $(LDFLAGS) -o loader.out loader.o2 -Ttext 0x7c00 # TODO *.o for kmain
 
 loader.bin: loader.out
 	objcopy -O binary -j .text loader.out loader.bin

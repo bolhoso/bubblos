@@ -176,7 +176,7 @@ read_sector:
 	mov al, dh		# NoF Sectors: Read DH sectors from the starting point
 	mov ch, 0x00	# Cylinder:    0
 	mov dh, 0x00	# Head/Track:  head 0
-	mov cl, 0x01	# Sector:      1st sector on the track, starts at 1
+	mov cl, 0x02	# Sector:      1st sector on the track, starts at 1
 
 	int 0x13
 	jc disk_error
@@ -287,12 +287,9 @@ start:
 												# Makefile creating disk image of enough size
 	call read_sector
 
-  # bios boot singature 0xAA55
-	mov dx, [0x9000 + 0x1fe]
+  # Print the kernel X (0x9058)
+	mov dx, [0x9000 + 0x0012]
 	call printw_hex
-
-	mov si, 0x9000 + 0x3220
-	call WriteString
 ######### TEST DISK
 
 	call switch_to_protected_mode
@@ -309,6 +306,7 @@ switch_to_protected_mode:
   ########################
 	# Start Protected Mode #
 
+	xchg bx, bx
 	cli						# turn off interrupts until the kernel sets the Interrupt Vector Handler 
 
 	# Load the GDT using the descriptor (which points to the actual GDT)
@@ -339,6 +337,9 @@ start_protected_mode:
 
   lea ebx, MSG_PROTECTED_MODE
 	call print_String_pm
+
+	xchg bx, bx
+	call 0x9000 
 
 	# not yet!! We need to fix linker crap first... call kmain					# And here comes the kernel!
 	hlt
