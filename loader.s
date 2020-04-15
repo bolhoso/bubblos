@@ -50,8 +50,8 @@ main:
   jmp short start
   nop
 
-# variables
-iBootDrive: .byte 0
+# Some variables
+iBootDrive:		.byte 0
 
 #
 # 
@@ -82,7 +82,6 @@ ClearScreen:
 WriteString:
 	push bp
 	mov bp, sp
-	pusha
 
   mov		ah, 0x0e	# 0xe, int 10h => print char
   mov		bx, 0x09  # fg and page 0
@@ -93,12 +92,11 @@ char:
   cmp		al, 0
   je		writestring_done
 
-  int	 0x10
+  int		0x10
   add		si, 1
   jmp		char
 
 writestring_done:
-	popa
 	pop bp
   retw
 .endfunc
@@ -200,6 +198,62 @@ disk_error:
   call	Reboot
 .endfunc
 
+.func load_gdt
+load_gdt:
+
+
+
+.endfunc
+
+##################
+# GDT Definition #
+##################
+gdt_start:
+
+gdt_null:				# Mandatory null descriptor
+	.int 0x0
+	.int 0x0
+
+gdt_code:				# Code segment descriptor
+	# Base=0x0, limit=0xFFFFF, with granularity=1 limits x 16^3 which extends to 4gb
+	# 1st flags:	(present)1 (privilege)00 (descriptor type)1 -> 1001b
+	# Type flags:	(code)1 (conforming)0 (readable)1 (accessed)0 -> 1010b
+	# 2nd flags:	(granularity)1 (32bit default)1 (64bit seg)0 (avl)0 -> 1100b
+	.word	0xffff			# Limit (bits 0-15)
+	.word	0x0					# Base (bits 0-15)
+	.byte	0x0					# Base (bits 16-23)
+	.byte 0b10011010		# 1st Flags, type flags
+	.byte	0b11001111		# 2nd Flags, Limit (bits 16-19)
+	.byte	0x0					# Base (bits 24-31)
+
+gdt_data:
+	# Define a segment similar to code, overlapping at the 4gb except for type flags
+	# Type flags:	(code)0 (expand down)0 (writable)1 (accessed)0 -> 0010b 
+	.word	0xffff			# Limit (bits 0-15)
+	.word	0x0					# Base (bits 0-15)
+	.byte	0x0					# Base (bits 16-23)
+	.byte 0b10010010	# 1st Flags, type flags
+	.byte	0b11001111	# 2nd Flags, Limit (bits 16-19)
+	.byte	0x0					# Base (bits 24-31)
+
+gdt_end:					# We label the end of GDT, so that AS can calculate
+									# The size of the GDT for the descriptor below in compile time
+
+##################
+# GDT Descriptor #
+##################
+gdt_descriptor:
+	.word	gdt_end - gdt_start - 1	# Size of GDT, minus 1 of the true size (why!?)
+	.int	gdt_start								# Start address of GDT, 32bits
+
+# Define some handy constants for the GDT segment descriptor offsets , which
+# are what segment registers must contain when in protected mode. For example ,
+# when we set DS = 0x10 in PM , the CPU knows that we mean it to use the
+# segment described at offset 0x10 ( i.e. 16 bytes ) in our GDT , which in our
+# case is the DATA segment (0x0 -> NULL ; 0x08 -> CODE ; 0x10 -> DATA )
+.equ CODE_SEG, gdt_code - gdt_start
+.equ DATA_SEG, gdt_data - gdt_start
+
 #
 # start
 #
@@ -214,9 +268,10 @@ start:
 	mov bp, sp
   sti							# enable interrupts
 
-  # Display loading message
-	lea		si, loadmsg
-	call	WriteString
+
+	# Display loading message
+	lea			si, loadmsg
+	call    WriteString
 
   # Prepare floppy drive for use
   mov dl, [iBootDrive]
@@ -236,46 +291,11 @@ start:
 	mov dx, [0x9000 + 0x1fe]
 	call printw_hex
 
-  # multiboot signature print #1BadBOOT
-	mov dx, [0x9000 + 512] # offset 0x200 on disk.img
-	call printw_hex
-	mov dx, [0x9000 + 514] # offset 0x202
-	call printw_hex
-
-#	00003220  44 69 76 69 73 69 6f 6e  20 42 79 20 30 00 00 00  |Division By 0...|
-	mov dx, [0x9000 + 0x500] # ffbe
-	call printw_hex
-
-	mov dx, [0x9000 + 0xa00] # 660c
-	call printw_hex
-
-	mov dx, [0x9000 + 0xde0] # 241c
-	call printw_hex
-
-	mov dx, [0x9000 + 0x1200] # 6843
-	call printw_hex
-
-	mov dx, [0x9000 + 0x1500] # 0xf1ac
-	call printw_hex
-
-	mov dx, [0x9000 + 0x1720] # 0x6202
-	call printw_hex
-
-	mov dx, [0x9000 + 0x3220] # 6944
-	call printw_hex
-
-	mov dx, [0x9000 + 0x3222] # 0x6976
-	call printw_hex
-
-	mov dx, [0x9000 + 0x322B] # 0x3020
-	call printw_hex
-
 	mov si, 0x9000 + 0x3220
 	call WriteString
 ######### TEST DISK
 
-  # Halt for now
-	jmp .
+	call switch_to_protected_mode
 
 bootFailure:
   call ClearScreen
@@ -284,10 +304,76 @@ bootFailure:
   call	WriteString
   call	Reboot
 
+.func switch_to_protected_mode
+switch_to_protected_mode:
+  ########################
+	# Start Protected Mode #
+
+	cli						# turn off interrupts until the kernel sets the Interrupt Vector Handler 
+
+	# Load the GDT using the descriptor (which points to the actual GDT)
+	lgdt [gdt_descriptor]
+
+	# Now, tell the processor to go to 32bit mode. Oh man... it's coming!
+	mov eax, cr0	# To make the switch, we set bit 0 in CR0 to 1, which intel
+	or	eax, 0x1	# tells that the 32bit bit :)
+	mov cr0, eax
+
+	# And we do a far jump, so that CPU clear all the pipeline stuff, flush caches
+	# of pre-fetched instructions and real mode (16bit) instructions
+  # load the code below
+	jmp CODE_SEG:start_protected_mode
+
+# here it comes! 32!
+.code32
+start_protected_mode:
+	mov ax, DATA_SEG		# Now, let's setup our data and code segments again
+	mov	ds, ax					# all based on the GDT segments we defined above
+	mov ss, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+
+	mov ebp, 0x90000		# Update the stack TODO: is this the right position?
+	mov esp, ebp
+
+  lea ebx, MSG_PROTECTED_MODE
+	call print_String_pm
+
+	# not yet!! We need to fix linker crap first... call kmain					# And here comes the kernel!
+	hlt
+
+.endfunc
+
+.func print_String_pm
+print_String_pm:
+	pusha
+	mov edx, 0xb8000
+
+print_pm_loop:
+	mov al, [ebx]
+	mov ah, 0x0f # White on black
+
+	cmp al, 0
+	je done
+
+	mov [edx], ax
+	add ebx, 1
+	add edx, 2
+
+	jmp print_pm_loop
+
+done: 
+	popa
+	ret
+
+.endfunc
+
 loadmsg:			.asciz "Loading OS...\r\n"
 diskerror:		.asciz "Disk error. "
 rebootmsg:		.asciz "Press any key to reboot\r\n"
 disk_success: .asciz "Read from disk!"
+MSG_PROTECTED_MODE: .asciz "    We're 32bit!    "
 
 # Fill to 512 bytes and 
 .fill (510-(.-main)), 1, 0

@@ -13,5 +13,11 @@
 - Add TSS - Task State Segment in the GDT to allow multi-tasking
 - Separate Kernel and User land into rings 0 and 3 in GDT
 
+Booloader
+- Load kernel above the 1mb range (like grub)
+	- turn on A20 register
+- Read ELF (?) or setup stack
+- 
+
 Refs:
 - https://wiki.osdev.org/Required_Knowledge

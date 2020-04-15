@@ -39,11 +39,11 @@ rundbg: disk.img # with debugger stop at beggining
 	bochs -f .bochsrc.txt -q
 
 # TODO temporary while I try writing my bootloader
-loader.o2: loader.s
+loader.out: loader.s
 	as --32 -o loader.o2 loader.s
-	$(LD) $(LDFLAGS) -o loader.out loader.o2 -Ttext 0x7c00
+	$(LD) $(LDFLAGS) -o loader.out loader.o2 *.o -Ttext 0x7c00
 
-loader.bin: loader.o2
+loader.bin: loader.out
 	objcopy -O binary -j .text loader.out loader.bin
 
 %.o: %.c
@@ -53,4 +53,4 @@ loader.bin: loader.o2
 	$(AS) $(ASFLAGS) $< -o $@
 
 clean:
-	rm -rf *.bin *.o kernel.elf disk.img log-bochs.txt
+	rm -rf *.out *.bin *.o kernel.elf disk.img log-bochs.txt
