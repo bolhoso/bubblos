@@ -306,7 +306,6 @@ switch_to_protected_mode:
   ########################
 	# Start Protected Mode #
 
-	xchg bx, bx
 	cli						# turn off interrupts until the kernel sets the Interrupt Vector Handler 
 
 	# Load the GDT using the descriptor (which points to the actual GDT)
@@ -338,7 +337,6 @@ start_protected_mode:
   lea ebx, MSG_PROTECTED_MODE
 	call print_String_pm
 
-	xchg bx, bx
 	call 0x9000 
 
 	# not yet!! We need to fix linker crap first... call kmain					# And here comes the kernel!

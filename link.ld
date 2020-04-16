@@ -1,7 +1,7 @@
 ENTRY(loader)
 
 SECTIONS {
-    . = 1M; /* code loaded at 1MiB, conventional place for kernels to be loaded */
+    . = 0x9000; /* code loaded at 1MiB, conventional place for kernels to be loaded */
     
     /* First the multiboot header in the beggining of the kernle file */
     .text ALIGN (4K) :
@@ -23,5 +23,11 @@ SECTIONS {
     {
         *(COMMON)
         *(.bss)
+    }
+
+    /DISCARD/ :
+    {
+        *(.comment)
+        *(.eh_frame)
     }
 }

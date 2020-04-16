@@ -16,11 +16,9 @@ void check_a20() {
 
 void init_interrupts() {
     fb_write("Enabling IRQs...");
-    idt_install();
     fb_write("OK!\n" );
 
     fb_write("Installing IRQ handlers...");
-    isr_install();
     fb_write("OK!\n" );
 }
 
@@ -56,13 +54,12 @@ void kmain() {
 
     fb_init();
     fb_clearscreen();
+		fb_write("Welcome to Bubbles 0.00000001\n");
+    delay(2000);
+
 
     init_interrupts();
-	init_cpuid();
-
-    int a = 0;
-    int b = 10 / a;
-    fb_write("oi" + b);
+		init_cpuid();
 
     screen_test();
     while(1);
@@ -70,7 +67,9 @@ void kmain() {
 
 /* Test filling the whole screen plus scroll */
 void screen_test() {
+		fb_write("we'll test the screen....");
     delay(5000);
+		fb_clearscreen();
     
     fb_setcolor(RED, LIGHT_GREEN);
     for (int i = 0; i < 25; i++) {
