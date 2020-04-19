@@ -16,9 +16,11 @@ void check_a20() {
 
 void init_interrupts() {
     fb_write("Enabling IRQs...");
+    // TODO: IDT is messing with screen driver idt_install();
     fb_write("OK!\n" );
 
     fb_write("Installing IRQ handlers...");
+    isr_install();
     fb_write("OK!\n" );
 }
 
@@ -54,7 +56,7 @@ void kmain() {
 
     fb_init();
     fb_clearscreen();
-		fb_write("Welcome to Bubbles 0.00000001\n");
+		fb_write("Welcome to Bubblos 0.00000001\n");
     delay(2000);
 
 

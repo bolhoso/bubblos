@@ -1,4 +1,4 @@
-OBJECTS = call.o kmain.o fbuffer.o io.o mem.o descriptor_tables.o idt.o isr.o isr_handlers.o loader_util.o
+OBJECTS = loader-stage1.o kmain.o fbuffer.o io.o mem.o descriptor_tables.o idt.o isr.o isr_handlers.o loader_util.o
 LD = ld
 LDFLAGS = -T link.ld -melf_i386
 CC = gcc
@@ -19,7 +19,7 @@ kernel.bin: kernel.elf
 
 disk.img: loader.bin kernel.bin
 	# When booting from Bochs disk, disk image size must be a multiple of 512 byte
-	dd if=/dev/zero of=zero.img bs=1 count=`perl -e 'print(512 - ((-s "kernel.bin")%512))'`
+	# dd if=/dev/zero of=zero.img bs=1 count=`perl -e 'print(512 - ((-s "kernel.bin")%512))'`
 	cat loader.bin kernel.bin > disk.img
 
 run: disk.img
@@ -41,13 +41,14 @@ rundbg: disk.img # with debugger stop at beggining
 	bochs -f .bochsrc.txt -q
 
 loader.o: loader.s
-	as --32 -o loader.o loader.s
+	as --32 -o $@ $<
 
-loader.out: loader.o
-	$(LD) $(LDFLAGS) -o loader.out loader.o -Ttext 0x7c00 # TODO *.o for kmain
-
-loader.bin: loader.out
+loader.bin: loader.o
+	$(LD) $(LDFLAGS) -o loader.out loader.o -Ttext 0x7c00
 	objcopy -O binary -j .text loader.out loader.bin
+
+loader-stage1.o: loader-stage1.s
+	as --32 -o $@ $<
 
 call.o: call.s
 	as --32 -o call.o call.s

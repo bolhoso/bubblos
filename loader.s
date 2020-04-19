@@ -1,10 +1,3 @@
-.code16
-.intel_syntax noprefix
-.text
-.org 0x0
-
-.globl main
-
 /*******************************************************************************
 
  This is the bootloader for my toy operating systems. Below is the main BIOS, 
@@ -22,7 +15,7 @@
 	 |  Free (638kb)  |
 	 |                |
 	 |                |
-	 +----------------+ <To Be Defined>
+	 +----------------+ Kernel image top place
 	 |  Kernel Load   |
 	 |     Area       |
 	 +----------------+ 0x9000
@@ -46,15 +39,33 @@
 
 *******************************************************************************/
 
+.code16
+.intel_syntax noprefix
+.text
+.org 0x0
+.align 512
+
+.globl main
+
+
 main:
   jmp short start
   nop
 
-# Some variables
-iBootDrive:		.byte 0
+# 
+# Constants definition
+.equ STAGE2_MEMORY_LOCATION, 0x9000
 
 #
-# 
+# Some variables
+iBootDrive:		.byte 0
+loadmsg:			.asciz "Loading OS...\r\n"
+diskerror:		.asciz "Disk error. "
+rebootmsg:		.asciz "Press any key to reboot\r\n"
+
+#
+# ClearScreen
+#
 .func ClearScreen
 ClearScreen:
   push	bp
@@ -70,7 +81,6 @@ ClearScreen:
   int		0x10
 
   popa
-  mov		sp, bp
   pop		bp
   retw
 .endfunc
@@ -186,9 +196,6 @@ read_sector:
 	cmp dh, al		# Did we read as many sectors as we wanted?
 	jne disk_error
 
-	lea si, disk_success
-	call WriteString
-
 	pop bp
 	ret
 
@@ -198,76 +205,39 @@ disk_error:
   call	Reboot
 .endfunc
 
-.func load_gdt
-load_gdt:
+.func read_stage2
+read_stage2:
+	push bp
+	mov bp, sp
 
+	mov bx, STAGE2_MEMORY_LOCATION
+	mov dl, [iBootDrive]	# The boot drive, stored from BIOS
 
+  # TODO we can read at most 18 sectors in floppies
+	mov dh, 28						# 64 sectors of 512 bytes, beware this is highly coupled with 
+												# Makefile creating disk image of enough size
+	call read_sector
+	xchg bx, bx
 
+	pop bp
+	ret
 .endfunc
-
-##################
-# GDT Definition #
-##################
-gdt_start:
-
-gdt_null:				# Mandatory null descriptor
-	.int 0x0
-	.int 0x0
-
-gdt_code:				# Code segment descriptor
-	# Base=0x0, limit=0xFFFFF, with granularity=1 limits x 16^3 which extends to 4gb
-	# 1st flags:	(present)1 (privilege)00 (descriptor type)1 -> 1001b
-	# Type flags:	(code)1 (conforming)0 (readable)1 (accessed)0 -> 1010b
-	# 2nd flags:	(granularity)1 (32bit default)1 (64bit seg)0 (avl)0 -> 1100b
-	.word	0xffff			# Limit (bits 0-15)
-	.word	0x0					# Base (bits 0-15)
-	.byte	0x0					# Base (bits 16-23)
-	.byte 0b10011010		# 1st Flags, type flags
-	.byte	0b11001111		# 2nd Flags, Limit (bits 16-19)
-	.byte	0x0					# Base (bits 24-31)
-
-gdt_data:
-	# Define a segment similar to code, overlapping at the 4gb except for type flags
-	# Type flags:	(code)0 (expand down)0 (writable)1 (accessed)0 -> 0010b 
-	.word	0xffff			# Limit (bits 0-15)
-	.word	0x0					# Base (bits 0-15)
-	.byte	0x0					# Base (bits 16-23)
-	.byte 0b10010010	# 1st Flags, type flags
-	.byte	0b11001111	# 2nd Flags, Limit (bits 16-19)
-	.byte	0x0					# Base (bits 24-31)
-
-gdt_end:					# We label the end of GDT, so that AS can calculate
-									# The size of the GDT for the descriptor below in compile time
-
-##################
-# GDT Descriptor #
-##################
-gdt_descriptor:
-	.word	gdt_end - gdt_start - 1	# Size of GDT, minus 1 of the true size (why!?)
-	.int	gdt_start								# Start address of GDT, 32bits
-
-# Define some handy constants for the GDT segment descriptor offsets , which
-# are what segment registers must contain when in protected mode. For example ,
-# when we set DS = 0x10 in PM , the CPU knows that we mean it to use the
-# segment described at offset 0x10 ( i.e. 16 bytes ) in our GDT , which in our
-# case is the DATA segment (0x0 -> NULL ; 0x08 -> CODE ; 0x10 -> DATA )
-.equ CODE_SEG, gdt_code - gdt_start
-.equ DATA_SEG, gdt_data - gdt_start
 
 #
 # start
 #
 start:
   cli
-  mov iBootDrive, dl	
-  mov ax, cs	 	 	# Cs=0x0, where boot is 0x7c00
-  mov ds, ax      # DS=0 ES=0 SS=0
+  mov iBootDrive, dl	# Save the boot-drive that BIOS put into DL to iBootDrive
+  mov ax, cs					# Cs=0x0, where boot is 0x7c00
+  mov ds, ax					# Initialize all segment registers DS=0 ES=0 SS=0
   mov es, ax
   mov ss, ax
-  mov sp, 0x7F00  # 256 bytes of stack, after 0x7E00
-	mov bp, sp
-  sti							# enable interrupts
 
+  # Allocates 1kb for bootloader stack, at 0x7E00 + 1kb
+  mov sp, 0x7E00 + 0x400
+	mov bp, sp
+  sti									# re-enable interrupts
 
 	# Display loading message
 	lea			si, loadmsg
@@ -279,20 +249,11 @@ start:
   int 0x13
   jc	bootFailure	 	 # show message is carry is set from int 13h
 
-######### TEST DISK: read 42 sectors, including boot sector and put at 0x9000
-# TODO to boot the kernel, I should not read the first sector
-	mov bx, 0x9000
-	mov dl, [iBootDrive]	# The boot drive, stored from BIOS
-	mov dh, 42						# 64 sectors of 512 bytes, beware this is highly coupled with 
-												# Makefile creating disk image of enough size
-	call read_sector
+	# Read stage2 from the disk, right after stage 1 
+	call read_stage2
 
-  # Print the kernel X (0x9058)
-	mov dx, [0x9000 + 0x0012]
-	call printw_hex
-######### TEST DISK
-
-	call switch_to_protected_mode
+  # Call bootloader Stage 2 to prepare environment for Kernel
+	call STAGE2_MEMORY_LOCATION # stage2_bootloader
 
 bootFailure:
   call ClearScreen
@@ -300,79 +261,6 @@ bootFailure:
   lea		si, diskerror
   call	WriteString
   call	Reboot
-
-.func switch_to_protected_mode
-switch_to_protected_mode:
-  ########################
-	# Start Protected Mode #
-
-	cli						# turn off interrupts until the kernel sets the Interrupt Vector Handler 
-
-	# Load the GDT using the descriptor (which points to the actual GDT)
-	lgdt [gdt_descriptor]
-
-	# Now, tell the processor to go to 32bit mode. Oh man... it's coming!
-	mov eax, cr0	# To make the switch, we set bit 0 in CR0 to 1, which intel
-	or	eax, 0x1	# tells that the 32bit bit :)
-	mov cr0, eax
-
-	# And we do a far jump, so that CPU clear all the pipeline stuff, flush caches
-	# of pre-fetched instructions and real mode (16bit) instructions
-  # load the code below
-	jmp CODE_SEG:start_protected_mode
-
-# here it comes! 32!
-.code32
-start_protected_mode:
-	mov ax, DATA_SEG		# Now, let's setup our data and code segments again
-	mov	ds, ax					# all based on the GDT segments we defined above
-	mov ss, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-
-	mov ebp, 0x90000		# Update the stack TODO: is this the right position?
-	mov esp, ebp
-
-  lea ebx, MSG_PROTECTED_MODE
-	call print_String_pm
-
-	call 0x9000 
-
-	# not yet!! We need to fix linker crap first... call kmain					# And here comes the kernel!
-	hlt
-
-.endfunc
-
-.func print_String_pm
-print_String_pm:
-	pusha
-	mov edx, 0xb8000
-
-print_pm_loop:
-	mov al, [ebx]
-	mov ah, 0x0f # White on black
-
-	cmp al, 0
-	je done
-
-	mov [edx], ax
-	add ebx, 1
-	add edx, 2
-
-	jmp print_pm_loop
-
-done: 
-	popa
-	ret
-
-.endfunc
-
-loadmsg:			.asciz "Loading OS...\r\n"
-diskerror:		.asciz "Disk error. "
-rebootmsg:		.asciz "Press any key to reboot\r\n"
-disk_success: .asciz "Read from disk!"
-MSG_PROTECTED_MODE: .asciz "    We're 32bit!    "
 
 # Fill to 512 bytes and 
 .fill (510-(.-main)), 1, 0
