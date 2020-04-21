@@ -13,6 +13,7 @@ loader-stage1.s: Stage 1, gets compiled together with Stage 0
 	[HACKY] - Setup A20 register
   - Loads stage2 from disk 512 * x sectors from disk to HIGH MEMORY (@1mb)
 		- int 0x15, ah=0x24
+		- remove the workaround from stage0 that reads additional sector beyond stage1 size (4 sectors for now)
 		[NOTE] - For now, we're loading a bunch of sectors in stage1, we need some code to do disk loading
 
 	[OK] - Setup a GDT with flat memory model (null gdt, code and data gdt flat)
