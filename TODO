@@ -17,7 +17,6 @@ Booloader
 - Load kernel above the 1mb range (like grub)
 	- turn on A20 register
 - Read ELF (?) or setup stack
-- 
 
 Refs:
 - https://wiki.osdev.org/Required_Knowledge
