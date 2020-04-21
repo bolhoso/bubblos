@@ -57,7 +57,7 @@ void kmain() {
     fb_init();
     fb_clearscreen();
 		fb_write("Welcome to Bubblos 0.00000001\n");
-    delay(2000);
+    delay(500);
 
 
     init_interrupts();
@@ -70,7 +70,7 @@ void kmain() {
 /* Test filling the whole screen plus scroll */
 void screen_test() {
 		fb_write("we'll test the screen....");
-    delay(5000);
+    delay(500);
 		fb_clearscreen();
     
     fb_setcolor(RED, LIGHT_GREEN);
@@ -80,7 +80,7 @@ void screen_test() {
         }
     }
 
-    delay(2000);
+    delay(1000);
 
     // now the scroll!
     fb_write("And here we scroll\n2 lines!\n");
