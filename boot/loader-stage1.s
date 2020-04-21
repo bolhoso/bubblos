@@ -3,9 +3,11 @@
 .text
 .org 0x0
 .align 512
+.globl main_stage1
 
-# Entry point, should be the first instruction at 0x9000
-jmp stage1_bootloader
+main_stage1:
+	# Entry point, should be the first instruction at 0x9000
+	jmp stage1_bootloader
 
 ##################
 # GDT Definition #
@@ -95,8 +97,6 @@ start_protected_mode:
 	mov ebp, 0x90000		# Update the stack TODO: is this the right position?
 	mov esp, ebp
 
-	xchg bx, bx
-
 testa20:
   # Test A20 register by setting two different values at an odd and even
   # memory position, then comparing. If A20 is off, both will address to
@@ -116,7 +116,6 @@ testa20:
 A20_off:
   lea ebx, MSG_A20_NOTENABLED
 	call print_String_pm
-	xchg bx, bx
 
 	jmp .
 
@@ -127,8 +126,9 @@ A20_off:
 	jmp testa20 
 
 a20on:
+	xchg bx, bx
 	# A20 is on, call the kernel
-	call 0x9123 # TODO kernel position
+	call 0x9000 + STAGE1_SIZE_BYTES
 	ret
 
 .endfunc
@@ -174,11 +174,9 @@ stage1_bootloader:
 
 	ret
 
-# Data
-.data
 MSG_PROTECTED_MODE: .asciz "Welcome to protected mode!"
 MSG_A20_NOTENABLED: .asciz "A20 not enabled :("
 .asciz "END STAGE1"
 
-.section .textend
-.align 512, 0
+# Fill to 512 bytes and 
+.fill (STAGE1_SIZE_BYTES-(.-main_stage1)), 1, 0

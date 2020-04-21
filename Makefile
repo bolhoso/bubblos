@@ -35,7 +35,7 @@ kernel.bin: kernel.elf
 disk.img: bootloader kernel.bin
 	# When booting from Bochs disk, disk image size must be a multiple of 512 byte
 	# dd if=/dev/zero of=zero.img bs=1 count=`perl -e 'print(512 - ((-s "kernel.bin")%512))'`
-	cat boot/loader.bin kernel.bin > disk.img
+	cat boot/loader.bin boot/loader-stage1.bin kernel.bin > disk.img
 
 .PHONY: bootloader
 bootloader:
