@@ -1,4 +1,4 @@
-OBJECTS = loader-stage1.o kmain.o fbuffer.o io.o mem.o descriptor_tables.o idt.o isr.o isr_handlers.o loader_util.o
+OBJECTS = call.o kmain.o fbuffer.o io.o mem.o descriptor_tables.o idt.o isr.o isr_handlers.o loader_util.o
 LD = ld
 LDFLAGS = -T link.ld -melf_i386
 CC = gcc
@@ -9,19 +9,41 @@ ASFLAGS = -f elf
 
 # TODO: there's GAS and NASM mixed files.... what do I do?! 0.0 :/
 
-all: kernel.elf
+all: kernel.elf disk.img
 
+#
+# Kernel targets
+#
 kernel.elf: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o kernel.elf
+
+call.o: call.s
+	as --32 -o call.o call.s
 
 kernel.bin: kernel.elf
 	ld -T link.ld -m elf_i386 -s -Ttext 0x9000 --oformat binary -o kernel.bin kernel.elf
 
-disk.img: loader.bin kernel.bin
+%.o: %.c
+	$(CC) $(CFLAGS) $< -o $@
+
+%.o: %.s
+	$(AS) $(ASFLAGS) $< -o $@
+
+#
+# Disk Image
+#
+disk.img: bootloader kernel.bin
 	# When booting from Bochs disk, disk image size must be a multiple of 512 byte
 	# dd if=/dev/zero of=zero.img bs=1 count=`perl -e 'print(512 - ((-s "kernel.bin")%512))'`
-	cat loader.bin kernel.bin > disk.img
+	cat boot/loader.bin kernel.bin > disk.img
 
+.PHONY: bootloader
+bootloader:
+	$(MAKE) -C boot/
+
+#
+# Running/Testing Targets
+#
 run: disk.img
 	qemu-system-i386 disk.img
 
@@ -40,24 +62,10 @@ runb: disk.img # doesn't stop at beggining
 rundbg: disk.img # with debugger stop at beggining
 	bochs -f .bochsrc.txt -q
 
-loader.o: loader.s
-	as --32 -o $@ $<
-
-loader.bin: loader.o
-	$(LD) $(LDFLAGS) -o loader.out loader.o -Ttext 0x7c00
-	objcopy -O binary -j .text loader.out loader.bin
-
-loader-stage1.o: loader-stage1.s
-	as --32 -o $@ $<
-
-call.o: call.s
-	as --32 -o call.o call.s
-
-%.o: %.c
-	$(CC) $(CFLAGS) $< -o $@
-
-%.o: %.s
-	$(AS) $(ASFLAGS) $< -o $@
-
+#
+# Clean
+#
+.PHONY: clean
 clean:
 	rm -rf *.img *.out *.bin *.o kernel.elf disk.img log-bochs.txt
+	$(MAKE) -C boot/ clean

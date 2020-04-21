@@ -128,7 +128,7 @@ A20_off:
 
 a20on:
 	# A20 is on, call the kernel
-	call kmain
+	call 0x9123 # TODO kernel position
 	ret
 
 .endfunc
