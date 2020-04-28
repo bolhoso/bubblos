@@ -14,9 +14,12 @@
 - Separate Kernel and User land into rings 0 and 3 in GDT
 
 Booloader
-- Load kernel above the 1mb range (like grub)
-	- turn on A20 register
+[DONE] - Load kernel above the 1mb range (like grub)
+[DONE] - Turn on A20 register
+- Pass kernel size in sectors to disk.c
 - Read ELF (?) or setup stack
+
+- Fix tabs/spaces
 
 Refs:
 - https://wiki.osdev.org/Required_Knowledge

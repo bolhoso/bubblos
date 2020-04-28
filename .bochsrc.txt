@@ -1,9 +1,9 @@
 megs:            32
 romimage:        file=/usr/share/bochs/BIOS-bochs-latest
 vgaromimage:     file=/usr/share/bochs/VGABIOS-lgpl-latest
-floppya:         1_44=disk.img, status=inserted
-boot:            a
 log:             log-bochs.txt
 clock:           sync=realtime, time0=local
 cpu:             count=1, ips=1000000
 magic_break:		 enabled=1
+ata0-master:     type=disk, mode=flat, path="bubblos.img"
+boot:            disk

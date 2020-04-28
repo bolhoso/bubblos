@@ -59,7 +59,6 @@ gdt_descriptor:
 .equ DATA_SEG, gdt_data - gdt_start
 .asciz "AAAAA"
 
-
 #
 # switch_to_protected_mode
 #
@@ -127,10 +126,12 @@ A20_off:
 
 a20on:
 	xchg bx, bx
-	# A20 is on, call the kernel
-	call 0x9000 + STAGE1_SIZE_BYTES
-	ret
+	call stage2_main
+	xchg bx, bx
+	call 0x100000
 
+	hlt
+	jmp .
 .endfunc
 
 .func print_String_pm
@@ -177,6 +178,3 @@ stage1_bootloader:
 MSG_PROTECTED_MODE: .asciz "Welcome to protected mode!"
 MSG_A20_NOTENABLED: .asciz "A20 not enabled :("
 .asciz "END STAGE1"
-
-# Fill to 512 bytes and 
-.fill (STAGE1_SIZE_BYTES-(.-main_stage1)), 1, 0

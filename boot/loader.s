@@ -177,6 +177,7 @@ print_digit:
 #	  es:bx - memory region to store
 .func read_sector
 read_sector:
+	nop
 	push bp
 	mov bp, sp
 
@@ -216,10 +217,6 @@ read_stage2:
   # TODO we can read at most 18 sectors in floppies
 	mov dh, STAGE1_SIZE_SECTOR	# Read X sectors of 512 bytes, where X is defined in the Makefile and
 															# Padded in loader-stage1.bin generation
-	add dh, 28									# TODO: while loader-stage1 doesn't put the kernel into high memory 
-															# and load it from disk, just add some sectors to read so that chain calls to absolute
-															#	memory positions work (in this case 0x9000 (stage1 position) + 2048 (stage1 size),
-															# leading to kernel entry point (call.s)
 	call read_sector
 
 	pop bp

@@ -25,6 +25,12 @@ SECTIONS {
         *(.bss)
     }
 
+    /* First the multiboot header in the beggining of the kernle file */
+    .text ALIGN (512) :
+    {
+        *(.text2)            /* all text sections from all files */
+    }
+
     /DISCARD/ :
     {
         *(.comment)

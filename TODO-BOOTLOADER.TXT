@@ -2,24 +2,18 @@ loader.s: Stage 0, gets compiled in its own binary
   [OK] - loaded by bios at 0x7c00
 	[OK] - setup stack
 	[OK] - Real mode disk and BIOS routines
-	- query low and high memory
 	[OK] - Disable interrupts
 	[OK] - Load Stage1 from disk and call it (just a few sectors)
+	- Query low and high memory
 
 loader-stage1.s: Stage 1, gets compiled together with Stage 0
 	[OK] - Starts in 16bit, real mode
 	[OK] - set stage1 stack (don't assume stage 0 will have a stack)
 
-	[HACKY] - Setup A20 register
-  - Loads stage2 from disk 512 * x sectors from disk to HIGH MEMORY (@1mb)
-		- int 0x15, ah=0x24
-		- remove the workaround from stage0 that reads additional sector beyond stage1 size (4 sectors for now)
+  [DONE] - Loads stage2 from disk 512 * x sectors from disk to HIGH MEMORY (@1mb)
+		[DONE] - remove the workaround from stage0 that reads additional sector beyond stage1 size (4 sectors for now)
 		[NOTE] - For now, we're loading a bunch of sectors in stage1, we need some code to do disk loading
 
-	[OK] - Setup a GDT with flat memory model (null gdt, code and data gdt flat)
-		- Kernel is doing a similar thing, we should dedup shortly
-		- If we decide to go the multi-boot route, we should setup the GDT somewhere it functions
-		  with both my Bubblos bootloader and GRUB (or any multiboot compliant bootloader)
 	[OK] - Setup protected mode with flat memory model
 		[OK] - sets cr0 bit
 		[OK] - long jump
@@ -28,6 +22,13 @@ loader-stage1.s: Stage 1, gets compiled together with Stage 0
 			- ensure stack is aligned 16bytes (needs to double check?) so that C calls work properly)
 	[OK] - begin kernel execution
 
+	[HACKY] - Setup A20 register
+	[OK] - Setup a GDT with flat memory model (null gdt, code and data gdt flat)
+		- Kernel is doing a similar thing, we should dedup shortly
+		- If we decide to go the multi-boot route, we should setup the GDT somewhere it functions
+		  with both my Bubblos bootloader and GRUB (or any multiboot compliant bootloader)
+
+	[DONE] - Load kernel into high memory (disk or memory copying?)
 	[???] System stage for Stage 1
 	- boot1 must be loaded at the address specified in the memory map
   - All segment registers must be set to the segment base address representing the first 64 kB of memory.
@@ -36,12 +37,11 @@ loader-stage1.s: Stage 1, gets compiled together with Stage 0
 
 loader-stage2.s: Stage 2, multiboot loader
 	- Locate the multi-boot header in the preloaded (low mem) kernel image
-	- verify headers and flags
-	- load kernel into high memory (disk or memory copying?)
-	- write a multiboot information structure (see GRUB multiboot specs)
-	- return sucess/failure to stage1
+	- Verify headers and flags
+	- Write a multiboot information structure (see GRUB multiboot specs)
+	- Return sucess/failure to stage1
 	
 Cleanup
-  - Clear directory structure for bootloader and kernel
-	- Merge with main
+  [DONE] - Clear directory structure for bootloader and kernel
+	[DONE] - Merge with main
 	- Migrate NASM *.S to GAS assembly
