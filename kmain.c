@@ -10,13 +10,11 @@ void delay(int millis);
 void check_a20() {
     fb_write("Checking A20 register is on...");
     asm_is_A20_on() ? fb_write("OK!\n") : fb_write("off\n");
-
-    // TODO: how to turn A20 on on my own bootloader
 }
 
 void init_interrupts() {
     fb_write("Enabling IRQs...");
-    // TODO: IDT is messing with screen driver idt_install();
+    idt_install();
     fb_write("OK!\n" );
 
     fb_write("Installing IRQ handlers...");

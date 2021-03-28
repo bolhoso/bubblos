@@ -258,7 +258,7 @@ start:
 bootFailure:
   call ClearScreen
 
-  lea    si, diskerror
+  lea   si, diskerror
   call  WriteString
   call  Reboot
 

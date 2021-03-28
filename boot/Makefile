@@ -1,5 +1,5 @@
 OBJECTS = loader.o loader-stage1.o
-STAGE1_OBJECTS = loader-stage1.o disk.o 
+STAGE1_OBJECTS = loader-stage1.o loader-stage2.o
 CC = gcc
 CFLAGS = -g -m32 -nostdlib -nostdinc -fno-pie -fno-builtin -fno-stack-protector \
          -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c

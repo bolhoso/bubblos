@@ -52,7 +52,11 @@ void stage2_main() {
         read_sector ((void *)(0x100000+512*i), 6 + i);
     }
 
-//    void (*kernel_entry)(void);
-//    kernel_entry = (void(*)(void))(0x100000);
-//    kernel_entry();
+
+    // Kernel is at 1mb, jump to that place and execute whatever is in there (which is call.S)
+    // We don't call kmain directly because that's not linked with bootloader.
+    // link-kernel.ld aligns kernel .text section at 1M to match what stage2_main did
+    void (*kernel_entry)(void);
+    kernel_entry = (void(*)(void))(0x100000);
+    kernel_entry();
 }

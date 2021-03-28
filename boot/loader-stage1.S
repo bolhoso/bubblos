@@ -118,18 +118,17 @@ A20_off:
 
   jmp .
 
-   in al, 0x92
+  in al, 0x92
   or al, 2
   out 0x92, al
 
   jmp testa20 
 
 a20on:
-  xchg bx, bx
+  # Call stage2 to read the kernel and put it into 1MB location in memory (0x9000
   call stage2_main
-  xchg bx, bx
-  call 0x100000
 
+  # If kernel ever exists, just stop processor and enter an infinite loop
   hlt
   jmp .
 .endfunc
@@ -169,8 +168,6 @@ done:
 #
 .code16
 stage1_bootloader:
-  # TODO: do I need to setup a new stack in here?
-
   call switch_to_protected_mode
 
   ret
