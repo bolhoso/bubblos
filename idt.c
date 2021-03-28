@@ -20,7 +20,7 @@ void idt_install() {
     idtp.base = (unsigned int) &(idt[0]);
 
     // TODO: implement memset
-    // TODO: pointer size is machien specific
+    // TODO: pointer size is machine specific
     for (unsigned int i = 0; i < sizeof(struct idt_entry) * NUM_IDT_ENTRIES; i++) {
         *((unsigned int *)&idt + i) = 0;
     }

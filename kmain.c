@@ -26,25 +26,25 @@ void init_interrupts() {
 
 void check_cpuid() {
     fb_write("Checking CPUID support...");
-	if (!asm_check_cpuid()) {
-		fb_write("Not supported! Halting");
-		asm_halt_processor(); 
-	} 
-	fb_write("OK!\n");
+    if (!asm_check_cpuid()) {
+        fb_write("Not supported! Halting");
+        asm_halt_processor(); 
+    } 
+    fb_write("OK!\n");
 }
 
 void enable_long_mode() {
     fb_write("Checking long-mode supported...");
-	if (!asm_check_long_mode()) {
-		fb_write("Not supported! Halting");
-		asm_halt_processor();
-	}
-	fb_write("OK!\n");
+    if (!asm_check_long_mode()) {
+        fb_write("Not supported! Halting");
+        asm_halt_processor();
+    }
+    fb_write("OK!\n");
 }
 
 
 void init_cpuid() {
-	fb_write("Checking CPU capabilities\n");
+    fb_write("Checking CPU capabilities\n");
 
     check_a20();
     check_cpuid();
@@ -56,12 +56,11 @@ void kmain() {
 
     fb_init();
     fb_clearscreen();
-		fb_write("Welcome to Bubblos 0.00000001\n");
+    fb_write("Welcome to Bubblos 0.00000001\n");
     delay(500);
 
-
     init_interrupts();
-		init_cpuid();
+    init_cpuid();
 
     screen_test();
     while(1);
@@ -69,9 +68,9 @@ void kmain() {
 
 /* Test filling the whole screen plus scroll */
 void screen_test() {
-		fb_write("we'll test the screen....");
+    fb_write("we'll test the screen....");
     delay(500);
-		fb_clearscreen();
+    fb_clearscreen();
     
     fb_setcolor(RED, LIGHT_GREEN);
     for (int i = 0; i < 25; i++) {
