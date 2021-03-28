@@ -17,8 +17,8 @@ all: kernel.elf bubblos.img
 kernel.elf: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o kernel.elf
 
-call.o: call.s
-	as --32 -o call.o call.s
+call.o: call.S
+	as --32 -o call.o call.S
 
 kernel.bin: kernel.elf
 	$(LD) $(LDFLAGS) -s --oformat binary -o kernel.bin kernel.elf
@@ -26,7 +26,7 @@ kernel.bin: kernel.elf
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
 
-%.o: %.s
+%.o: %.S
 	$(AS) $(ASFLAGS) $< -o $@
 
 #

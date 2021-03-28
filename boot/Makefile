@@ -28,7 +28,7 @@ loader-stage1.bin: $(STAGE1_OBJECTS)
 	cat loader-stage1-temp.bin stage1-padding.img > $@
 	rm loader-stage1-temp.bin stage1-padding.img
 
-%.o: %.s
+%.o: %.S
 	$(AS) $(ASFLAGS) $< -o $@
 
 %.o: %.c
